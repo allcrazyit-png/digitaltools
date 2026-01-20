@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瑞全企業 | 數位工具全能合併版 (一字不漏完整版)</title>
+    
+    <!-- 引入必要的 Library -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+        
+        /* 統一字體與基本樣式 */
+        body {
+            font-family: 'Noto Sans TC', 'Inter', -apple-system, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 導覽列樣式 (來自 digitaltools.html) */
+        .master-nav {
+            background-color: #1e293b;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.1);
+        }
+        .nav-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        /* 第一個 HTML (digitaltools - 模具包材) 的專屬樣式 */
+        .html1-card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); padding: 2rem; margin-bottom: 2rem; }
+        .html1-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+
+        /* 第二個 HTML (digitaltools - 生產預估) 的專屬樣式 */
+        .html2-body { background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+        .html2-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .html2-label { display: block; font-size: 0.9rem; font-weight: 800; color: #334155; margin-bottom: 0.4rem; }
+        .html2-input, .html2-select { width: 100%; padding: 1rem 0.5rem; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1.25rem; font-weight: 700; color: #1e293b; text-align: center; }
+        .html2-tab-btn { padding: 1rem; font-weight: 800; border-bottom: 4px solid transparent; transition: all 0.2s; }
+        .html2-tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; background-color: white; }
+        .html2-quick-btn { background-color: #e2e8f0; color: #475569; padding: 6px 12px; border-radius: 8px; font-size: 14px; font-weight: 800; }
+        .html2-result-card { padding: 1rem; text-align: center; border-radius: 12px; border: 1px solid #e2e8f0; }
+
+        /* 第三個 HTML (digitaltools - 成本模擬) 的專屬樣式 */
+        .html3-glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .html3-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2rem; }
+        .html3-tab-active { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .html3-input-no-spin::-webkit-outer-spin-button, .html3-input-no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        /* 報價單計算 (React) 的專屬樣式 */
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .quote-input::-webkit-outer-spin-button, .quote-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .input-focus:focus { border-color: #3b82f6; ring: 2px; ring-color: #bfdbfe; }
+        .transition-all { transition-duration: 200ms; }
+
+        /* 隱藏區塊 */
+        .tool-section { display: none; padding: 20px 10px; }
+        .tool-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- 主導覽列 -->
+    <nav class="master-nav">
+        <button onclick="switchTool(1)" id="master-btn-1" class="nav-btn active">1. 模具包材</button>
+        <button onclick="switchTool(2)" id="master-btn-2" class="nav-btn">2. 生產預估</button>
+        <button onclick="switchTool(3)" id="master-btn-3" class="nav-btn">3. 人力成本</button>
+        <button onclick="switchTool(4)" id="master-btn-4" class="nav-btn">4. 報價改善分析</button>
+    </nav>
+
+    <!-- 工具 1: 模具與塑膠袋自動計算器 (digitaltools.html) -->
+    <section id="tool-1" class="tool-section active">
+        <div class="max-w-4xl mx-auto">
+            <header class="text-center mb-10">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">製造業自動計算工具</h1>
+                <p class="text-gray-600">根據您的筆記公式自動換算重量、數量與成本</p>
+            </header>
+
+            <section class="html1-card">
+                <div class="flex items-center mb-6 border-l-4 border-blue-500 pl-4">
+                    <h2 class="text-xl font-bold text-gray-800">1. 模具重量計算</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">長 (cm)</label>
+                        <input type="number" id="mold_l" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="輸入長度" oninput="calcMold()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">寬 (cm)</label>
+                        <input type="number" id="mold_w" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="輸入寬度" oninput="calcMold()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">高 (cm)</label>
+                        <input type="number" id="mold_h" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="輸入高度" oninput="calcMold()">
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div class="text-center md:text-left">
+                        <span class="block text-blue-800 font-medium text-sm mb-1">重量結果 (公斤)：</span>
+                        <span class="text-3xl font-bold text-blue-600"><span id="mold_res">0.000</span> <small class="text-lg font-normal text-blue-400">kg</small></span>
+                    </div>
+                    <div class="text-center md:text-right border-t md:border-t-0 md:border-l border-blue-200 pt-4 md:pt-0 md:pl-6">
+                        <span class="block text-indigo-800 font-medium text-sm mb-1">換算噸數 (公噸)：</span>
+                        <span class="text-3xl font-bold text-indigo-600"><span id="mold_tons_res">0.000</span> <small class="text-lg font-normal text-indigo-400">t</small></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3 italic">* 公式：長 × 寬 × 高 × 0.0079 | 1 公噸 (t) = 1000 公斤 (kg)</p>
+            </section>
+
+            <section class="html1-card">
+                <div class="flex items-center mb-6 border-l-4 border-green-500 pl-4">
+                    <h2 class="text-xl font-bold text-gray-800">2. 塑膠袋規格、數量與成本計算</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">厚度</label>
+                        <input type="number" id="bag_t" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="例如: 0.03" oninput="calcBag()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">寬度 (cm)</label>
+                        <input type="number" id="bag_w" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="例如: 30" oninput="calcBag()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">長度 (cm)</label>
+                        <input type="number" id="bag_l" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="例如: 70" oninput="calcBag()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">一包總重量 (kg)</label>
+                        <input type="number" id="bag_total_w" class="html1-input w-full border border-gray-300 rounded-lg p-3" placeholder="例如: 25.5" oninput="calcBag()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1 text-red-600 font-bold">每公斤價格 (元/kg)</label>
+                        <input type="number" id="bag_price_kg" class="html1-input w-full border border-red-200 bg-red-50 rounded-lg p-3" placeholder="例如: 80" oninput="calcBag()">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-green-50 p-4 rounded-xl border border-green-100 flex flex-col items-center">
+                        <span class="text-green-800 font-medium text-sm">單個重量 (kg)</span>
+                        <span class="text-2xl font-bold text-green-600"><span id="bag_single_res">0.00000</span></span>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-xl border border-red-100 flex flex-col items-center">
+                        <span class="text-red-800 font-medium text-sm">單個成本 (元)</span>
+                        <span class="text-2xl font-bold text-red-600"><small class="text-lg">$</small><span id="bag_cost_res">0.00</span></span>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-100 flex flex-col items-center">
+                        <span class="text-orange-800 font-medium text-sm">預估總數量 (pcs)</span>
+                        <span class="text-2xl font-bold text-orange-600"><span id="bag_qty_res">0</span></span>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-400 mt-4 space-y-1">
+                    <p>* 單重公式：厚度 × 寬 × 長 × 0.19 ÷ 1000</p>
+                    <p>* 單個成本：單重 × 每公斤價格</p>
+                    <p>* 數量公式：總重量 ÷ 四捨五入後的單重 (依筆記範例)</p>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- 工具 2: 生產預估(大字版) (digitaltools.html) -->
+    <section id="tool-2" class="tool-section">
+        <div class="max-w-xl mx-auto html2-body p-4 rounded-2xl">
+            <div class="mb-6 text-center">
+                <h1 class="text-2xl font-black text-slate-800 tracking-tight">生產進度快算 - 大字版</h1>
+                <p class="text-sm text-slate-500 font-bold">瑞全企業智慧幕僚工具</p>
+            </div>
+            <div class="html2-card p-5 mb-5 border-l-8 border-slate-800">
+                <h2 class="text-sm font-black text-slate-400 uppercase mb-3">機台與模具設定</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="html2-label">模次秒數 (CT)</label>
+                        <input type="number" id="cycleTime" value="60" step="0.1" class="html2-input">
+                    </div>
+                    <div>
+                        <label class="html2-label">每模穴數 (Cav)</label>
+                        <input type="number" id="cavities" value="1" class="html2-input">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="html2-label">扣除休息/停機 (分鐘)</label>
+                    <input type="number" id="breakMinutes" value="60" class="html2-input">
+                </div>
+            </div>
+            <div class="flex bg-slate-200 rounded-t-xl overflow-hidden">
+                <button id="tabA" onclick="switchMode('A')" class="html2-tab-btn active flex-1">功能 A: 算產量</button>
+                <button id="tabB" onclick="switchMode('B')" class="html2-tab-btn flex-1">功能 B: 算交期</button>
+            </div>
+            <div class="html2-card p-6 rounded-t-none mb-6">
+                <div class="mb-6 pb-6 border-b border-dashed border-slate-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="html2-label !mb-0">【開始生產時間】</label>
+                        <button onclick="setNow()" class="html2-quick-btn bg-blue-100 text-blue-700">填入現在</button>
+                    </div>
+                    <div class="grid grid-cols-12 gap-2">
+                        <div class="col-span-6">
+                            <label class="text-[10px] text-slate-400">日期</label>
+                            <input type="date" id="startDate" class="html2-input !text-sm !p-2">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="text-[10px] text-slate-400">時</label>
+                            <select id="startH" class="html2-select !text-sm !p-2"></select>
+                        </div>
+                        <div class="col-span-3">
+                            <label class="text-[10px] text-slate-400">分</label>
+                            <select id="startM" class="html2-select !text-sm !p-2"></select>
+                        </div>
+                    </div>
+                </div>
+                <div id="panelA" class="space-y-4">
+                    <label class="html2-label">【預計結束時間】</label>
+                    <div class="grid grid-cols-12 gap-2">
+                        <div class="col-span-6">
+                            <label class="text-[10px] text-slate-400">日期</label>
+                            <input type="date" id="endDate" class="html2-input !text-sm !p-2">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="text-[10px] text-slate-400">時</label>
+                            <select id="endH" class="html2-select !text-sm !p-2"></select>
+                        </div>
+                        <div class="col-span-3">
+                            <label class="text-[10px] text-slate-400">分</label>
+                            <select id="endM" class="html2-select !text-sm !p-2"></select>
+                        </div>
+                    </div>
+                    <button onclick="calculateA()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-xl shadow-xl shadow-blue-200 active:scale-95 transition mt-4">計算預估產量</button>
+                </div>
+                <div id="panelB" class="hidden space-y-4">
+                    <label class="html2-label">【目標生產數量】</label>
+                    <input type="number" id="targetQty" value="160" class="html2-input text-3xl text-emerald-700 py-4">
+                    <p class="text-xs text-slate-400 font-bold text-center">※ 以 753D 專案為例，基本日需求為 160 PCS</p>
+                    <button onclick="calculateB()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xl shadow-xl shadow-emerald-200 active:scale-95 transition">推算完工交期</button>
+                </div>
+            </div>
+            <div id="resultArea" class="hidden space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="html2-result-card bg-blue-50 border-blue-200">
+                        <span class="text-xs font-black text-blue-500 uppercase">預估總產出</span>
+                        <div class="text-3xl font-black text-blue-700" id="resQty">0</div>
+                        <span class="text-xs font-bold text-blue-400">PCS</span>
+                    </div>
+                    <div class="html2-result-card bg-emerald-50 border-emerald-200">
+                        <span class="text-xs font-black text-emerald-500 uppercase">預計完工時間</span>
+                        <div class="text-xl font-black text-emerald-700 mt-1" id="resTime">--:--</div>
+                        <div class="text-[10px] font-bold text-emerald-400" id="resDate">--</div>
+                    </div>
+                    <div class="html2-result-card bg-slate-50 border-slate-200">
+                        <span class="text-xs font-black text-slate-500 uppercase">總投入工時</span>
+                        <div class="text-2xl font-black text-slate-700" id="resTotalDur">0</div>
+                        <span class="text-xs font-bold text-slate-400">小時</span>
+                    </div>
+                    <div class="html2-result-card bg-amber-50 border-amber-200">
+                        <span class="text-xs font-black text-amber-500 uppercase">純生產時數</span>
+                        <div class="text-2xl font-black text-amber-700" id="resEffDur">0</div>
+                        <span class="text-xs font-bold text-slate-400">小時</span>
+                    </div>
+                </div>
+                <div class="html2-card p-4 border-l-8 border-amber-500 bg-amber-50">
+                    <p class="text-sm font-bold text-amber-900 leading-relaxed" id="resNote"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 工具 3: 2026 瑞全人力成本決策模擬器 (digitaltools.html) -->
+    <section id="tool-3" class="tool-section">
+        <div class="max-w-6xl mx-auto">
+            <header class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight italic">2026 瑞全人力成本模擬器</h1>
+                    <p class="text-blue-600 font-medium mt-1">二代接班專用：含自訂年終之「真實小時成本」精算</p>
+                </div>
+                <div class="inline-flex p-1.5 bg-slate-200 rounded-2xl shadow-inner w-full md:w-auto">
+                    <button id="btnMigrant" onclick="setStaffType('migrant')" class="flex-1 md:px-8 py-3 rounded-xl text-sm font-bold transition-all duration-200 html3-tab-active">外籍移工</button>
+                    <button id="btnLocal" onclick="setStaffType('local')" class="flex-1 md:px-8 py-3 rounded-xl text-sm font-bold transition-all duration-200 text-slate-500">本籍勞工</button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+                        <h2 class="text-lg font-bold mb-6 flex items-center text-slate-700">
+                            <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-sm italic font-black">01</span>
+                            薪資與年終設定
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest">每月實發薪資 (加班基準)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                    <input type="number" id="actualSalary" value="29500" oninput="calculateAll()" class="html3-input-no-spin w-full pl-10 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl text-2xl font-black text-slate-900 focus:bg-white focus:border-blue-500 transition-all outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest text-orange-600">年終獎金 (直接填入金額)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 font-bold">$</span>
+                                    <input type="number" id="bonusAmount" value="29500" oninput="calculateAll()" class="html3-input-no-spin w-full pl-10 pr-4 py-4 bg-orange-50/30 border-2 border-orange-100 rounded-2xl text-2xl font-black text-orange-600 focus:bg-white focus:border-orange-500 transition-all outline-none">
+                                </div>
+                                <p class="text-[10px] text-orange-400 mt-2 italic">※ 此金額將攤提到年度時薪中</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-2 tracking-widest">投保級距 (影響法定規費)</label>
+                                <select id="insuranceGrade" onchange="updateInsuranceCosts()" class="html3-select w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-lg font-bold text-slate-700 focus:bg-white focus:border-blue-500 transition-all outline-none cursor-pointer shadow-inner">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold mb-6 flex items-center text-slate-700">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mr-3 text-sm italic font-black">02</span>
+                            企業法定負擔 (每月)
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-slate-600 text-sm">
+                            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">勞保費 (雇主)</label>
+                                <p class="text-[10px] font-bold text-blue-500 mb-2" id="displayLaborRate">~8.05%</p>
+                                <div class="flex items-baseline font-black">
+                                    <span class="text-xs text-slate-400 mr-1">$</span>
+                                    <input type="number" id="feeLabor" oninput="calculateAll()" class="html3-input-no-spin w-full font-black text-xl bg-transparent outline-none text-slate-700">
+                                </div>
+                            </div>
+                            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">健保費 (雇主)</label>
+                                <p class="text-[10px] font-bold text-slate-400 mb-2">~4.84%</p>
+                                <div class="flex items-baseline font-black">
+                                    <span class="text-xs text-slate-400 mr-1">$</span>
+                                    <input type="number" id="feeHealth" oninput="calculateAll()" class="html3-input-no-spin w-full font-black text-xl bg-transparent outline-none text-slate-700">
+                                </div>
+                            </div>
+                            <div id="pensionContainer" class="p-5 rounded-2xl border transition-all duration-300">
+                                <label class="block text-[10px] font-black uppercase mb-1" id="pensionLabel">勞退金 (6%)</label>
+                                <p class="text-[10px] font-bold mb-2" id="pensionDesc">僅本籍適用</p>
+                                <div class="flex items-baseline font-black">
+                                    <span class="text-xs mr-1 opacity-50">$</span>
+                                    <input type="number" id="feePension" oninput="calculateAll()" class="html3-input-no-spin w-full font-black text-xl bg-transparent outline-none">
+                                </div>
+                            </div>
+                            <div id="stabilityContainer" class="p-5 rounded-2xl border transition-all duration-300 shadow-sm">
+                                <label class="block text-[10px] font-black uppercase mb-1" id="stabilityLabel">就業安定費</label>
+                                <p class="text-[10px] font-bold mb-2" id="stabilityDesc">外勞專用</p>
+                                <div class="flex items-baseline font-black">
+                                    <span class="text-xs mr-1 opacity-50">$</span>
+                                    <input type="number" id="feeStability" oninput="calculateAll()" class="html3-input-no-spin w-full font-black text-xl bg-transparent outline-none text-slate-700">
+                                </div>
+                            </div>
+                            <div class="p-5 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-sm">
+                                <label class="block text-[10px] font-black text-blue-600 uppercase mb-1 font-black">職災保險 (動態)</label>
+                                <p class="text-[10px] font-bold text-blue-400 mb-2">費率 ~0.24%</p>
+                                <div class="flex items-baseline font-black text-blue-700">
+                                    <span class="text-xs mr-1 opacity-50">$</span>
+                                    <input type="number" id="feeAccident" oninput="calculateAll()" class="html3-input-no-spin w-full font-black text-xl bg-transparent outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold mb-6 flex items-center text-slate-700">
+                            <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mr-3 text-sm italic font-black">03</span>
+                            出勤與加班配置 (瑞全公式: 1.33 / 1.66)
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-orange-50/50 p-6 rounded-2xl border border-orange-100 shadow-sm">
+                                <label class="block text-xs font-black text-orange-600 uppercase mb-4 tracking-widest">平日加班 (月基準 22天)</label>
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-orange-400 font-bold uppercase">天數</span>
+                                        <input type="number" id="otDays" value="22" oninput="calculateAll()" class="html3-input-no-spin w-full bg-white p-3 rounded-xl border border-orange-200 font-bold outline-none text-center">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-orange-400 font-bold uppercase">每日小時</span>
+                                        <input type="number" id="otHours" value="1" step="0.5" oninput="calculateAll()" class="html3-input-no-spin w-full bg-white p-3 rounded-xl border border-orange-200 font-bold outline-none text-center">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-red-50/50 p-6 rounded-2xl border border-red-100 shadow-sm">
+                                <label class="block text-xs font-black text-red-600 uppercase mb-4 tracking-widest">假日加班 (8小時/日)</label>
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-red-400 font-bold uppercase">天數</span>
+                                        <input type="number" id="holidayDays" value="0" oninput="calculateAll()" class="html3-input-no-spin w-full bg-white p-3 rounded-xl border border-red-200 font-bold outline-none text-center">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-red-400 font-bold uppercase">時數</span>
+                                        <input type="number" id="holidayHours" value="8" oninput="calculateAll()" class="html3-input-no-spin w-full bg-white p-3 rounded-xl border border-red-200 font-bold outline-none text-center">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-blue-600 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl transition-all duration-700"></div>
+                        <div class="relative z-10 text-center">
+                            <p class="text-blue-100 text-[10px] font-black uppercase tracking-[0.4em] mb-4 underline decoration-blue-400 underline-offset-4">Annual Enterprise Total (一整年)</p>
+                            <div class="flex items-baseline justify-center">
+                                <span class="text-2xl font-bold text-blue-200 mr-2">$</span>
+                                <div class="text-6xl font-black tracking-tighter" id="displayAnnualCost">0</div>
+                            </div>
+                            <div class="mt-6 flex justify-between items-center text-xs text-blue-100 bg-white/10 p-4 rounded-2xl border border-white/20">
+                                 <span class="font-bold uppercase tracking-widest">年終獎金總額：</span>
+                                 <span class="font-black text-2xl text-white" id="displayYearEndAmount">$0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl sticky top-10 border border-slate-800 overflow-hidden relative">
+                        <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl"></div>
+                        <div class="relative z-10">
+                            <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em] mb-4 tracking-[0.2em]">Management Decision Board</p>
+                            <div class="flex items-baseline mb-8">
+                                <span class="text-3xl font-bold text-slate-600 mr-2">$</span>
+                                <div class="text-5xl font-black tracking-tighter" id="displayTotalCost">0</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-6 mb-8 pt-8 border-t border-slate-800">
+                                <div class="flex items-center justify-between text-blue-400 group">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 rounded-full bg-blue-500 mr-3 animate-pulse"></div>
+                                        <span class="text-sm font-black">報價基準時薪 (含年終)</span>
+                                    </div>
+                                    <span class="text-3xl font-black" id="displayHourlyRate">$0</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-400 border-t border-slate-800/50 pt-4">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-black uppercase tracking-widest uppercase">加班費核算基準 (1.0x)</span>
+                                        <span class="text-[9px] text-slate-500 font-bold italic">※ 瑞全公式: 薪資 ÷ 240</span>
+                                    </div>
+                                    <span class="text-xl font-bold text-slate-300" id="displayHourlyBaseText">$0.0 / hr</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-400">
+                                    <span class="text-[10px] font-black uppercase tracking-widest uppercase">每月總投入工時</span>
+                                    <span class="text-xl font-bold text-slate-300" id="displayTotalHours">0 hr</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 text-slate-300">
+                                <div class="bg-white/5 p-5 rounded-[1.5rem] border border-white/10 flex justify-between items-center transition-all hover:bg-white/10">
+                                    <span class="text-orange-400 text-[10px] font-black tracking-widest uppercase">每月加班費</span>
+                                    <span class="text-xl font-black text-orange-500" id="displayTotalOT">$0</span>
+                                </div>
+                                <div class="bg-white/5 p-5 rounded-[1.5rem] border border-white/10 flex justify-between items-center transition-all hover:bg-white/10">
+                                    <span class="text-blue-400 text-[10px] font-black tracking-widest uppercase">每月規費總計</span>
+                                    <span class="text-xl font-black text-blue-500" id="displayTotalFees">$0</span>
+                                </div>
+                            </div>
+
+                            <div id="statusIndicator" class="mt-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-center shadow-inner transition-all duration-500 bg-slate-800 border border-slate-700">
+                                瑞全營運決策動態分析
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="alertBox" class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hidden transition-all duration-300 shadow-xl shadow-slate-100">
+                        <div class="flex items-center mb-4">
+                            <div class="w-1.5 h-6 bg-blue-600 rounded-full mr-3"></div>
+                            <h4 class="font-black text-slate-800 text-sm italic" id="alertTitle">顧問經營建議</h4>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed font-bold italic" id="alertDesc"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 工具 4: 報價改善效益分析系統 (來自 報價單計算.html - React) -->
+    <section id="tool-4" class="tool-section">
+        <div id="react-quote-analysis-root"></div>
+    </section>
+
+    <!-- 工具 1-3 邏輯 (Vanilla JS from digitaltools.html) -->
+    <script>
+        function switchTool(toolId) {
+            document.querySelectorAll('.tool-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tool-${toolId}`).classList.add('active');
+            document.getElementById(`master-btn-${toolId}`).classList.add('active');
+            if(toolId === 2) { populateSelects(); setNow(); }
+            if(toolId === 3) { initInsuranceOptions(); updateInsuranceCosts(); }
+        }
+
+        function calcMold() {
+            const l = parseFloat(document.getElementById('mold_l').value) || 0;
+            const w = parseFloat(document.getElementById('mold_w').value) || 0;
+            const h = parseFloat(document.getElementById('mold_h').value) || 0;
+            const kg = l * w * h * 0.0079;
+            const tons = kg / 1000;
+            document.getElementById('mold_res').innerText = kg.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+            document.getElementById('mold_tons_res').innerText = tons.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 5 });
+        }
+
+        function calcBag() {
+            const t = parseFloat(document.getElementById('bag_t').value) || 0;
+            const w = parseFloat(document.getElementById('bag_w').value) || 0;
+            const l = parseFloat(document.getElementById('bag_l').value) || 0;
+            const totalW = parseFloat(document.getElementById('bag_total_w').value) || 0;
+            const priceKg = parseFloat(document.getElementById('bag_price_kg').value) || 0;
+            const singleWRaw = (t * w * l * 0.19) / 1000;
+            document.getElementById('bag_single_res').innerText = singleWRaw.toFixed(5);
+            const costPerBag = singleWRaw * priceKg;
+            document.getElementById('bag_cost_res').innerText = costPerBag.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+            if (singleWRaw > 0 && totalW > 0) {
+                const roundedSingleW = parseFloat(singleWRaw.toFixed(3)); 
+                const qty = Math.floor(totalW / roundedSingleW);
+                document.getElementById('bag_qty_res').innerText = qty.toLocaleString();
+            } else {
+                document.getElementById('bag_qty_res').innerText = "0";
+            }
+        }
+
+        function populateSelects() {
+            const hIds = ['startH', 'endH'], mIds = ['startM', 'endM'];
+            hIds.forEach(id => {
+                const s = document.getElementById(id);
+                if (s.options.length > 0) return;
+                for(let i=0; i<24; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i; opt.text = i.toString().padStart(2, '0');
+                    s.add(opt);
+                }
+            });
+            mIds.forEach(id => {
+                const s = document.getElementById(id);
+                if (s.options.length > 0) return;
+                for(let i=0; i<60; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i; opt.text = i.toString().padStart(2, '0');
+                    s.add(opt);
+                }
+            });
+        }
+
+        function setNow() {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+            document.getElementById('startDate').value = dateStr;
+            document.getElementById('startH').value = now.getHours();
+            document.getElementById('startM').value = now.getMinutes();
+            document.getElementById('endDate').value = dateStr;
+            document.getElementById('endH').value = now.getHours();
+            document.getElementById('endM').value = now.getMinutes();
+        }
+
+        function getSelectedDate(prefix) {
+            const dateStr = document.getElementById(prefix + 'Date').value;
+            const h = parseInt(document.getElementById(prefix + 'H').value);
+            const m = parseInt(document.getElementById(prefix + 'M').value);
+            const d = new Date(dateStr);
+            d.setHours(h, m, 0, 0);
+            return d;
+        }
+
+        function switchMode(mode) {
+            document.getElementById('panelA').classList.toggle('hidden', mode !== 'A');
+            document.getElementById('panelB').classList.toggle('hidden', mode !== 'B');
+            document.getElementById('tabA').classList.toggle('active', mode === 'A');
+            document.getElementById('tabB').classList.toggle('active', mode === 'B');
+            document.getElementById('resultArea').classList.add('hidden');
+        }
+
+        function calculateA() {
+            const start = getSelectedDate('start'), end = getSelectedDate('end');
+            const ct = parseFloat(document.getElementById('cycleTime').value) || 60;
+            const cav = parseInt(document.getElementById('cavities').value) || 1;
+            const breaks = parseFloat(document.getElementById('breakMinutes').value) || 0;
+            if (end <= start) { return; }
+            const totalMin = (end - start) / 1000 / 60;
+            const effMin = Math.max(0, totalMin - breaks);
+            const qty = Math.floor((effMin * 60) / ct) * cav;
+            showResults(qty, end, totalMin, effMin);
+        }
+
+        function calculateB() {
+            const start = getSelectedDate('start'), targetQty = parseInt(document.getElementById('targetQty').value) || 0;
+            const ct = parseFloat(document.getElementById('cycleTime').value) || 60;
+            const cav = parseInt(document.getElementById('cavities').value) || 1;
+            const breaks = parseFloat(document.getElementById('breakMinutes').value) || 0;
+            const prodSec = Math.ceil(targetQty / cav) * ct;
+            const totalMin = (prodSec / 60) + breaks;
+            const end = new Date(start.getTime() + totalMin * 60 * 1000);
+            showResults(targetQty, end, totalMin, prodSec/60);
+        }
+
+        function showResults(qty, endTime, totalMin, effMin) {
+            document.getElementById('resQty').innerText = Math.round(qty).toLocaleString();
+            document.getElementById('resTime').innerText = endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+            document.getElementById('resDate').innerText = (endTime.getMonth()+1) + "/" + endTime.getDate();
+            document.getElementById('resTotalDur').innerText = (totalMin / 60).toFixed(2);
+            document.getElementById('resEffDur').innerText = (effMin / 60).toFixed(2);
+            document.getElementById('resNote').innerText = `💡 幕僚建議：此任務投入 ${(totalMin/60).toFixed(1)} 小時。產量約為 753D 日產量的 ${(qty/160).toFixed(1)} 倍。若總投入超過 8.5 小時，請注意人員加班費成本控管。`;
+            document.getElementById('resultArea').classList.remove('hidden');
+        }
+
+        let currentStaffType = 'migrant';
+        function initInsuranceOptions() {
+            const select = document.getElementById('insuranceGrade');
+            if (select.options.length > 0) return;
+            const grades = [0, 29500, 30300, 31800, 33300, 34800, 36300, 38200, 40100, 42000, 43900, 45800];
+            grades.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.innerText = val === 0 ? "不計算勞健保/規費 (0)" : `投保級距：NT$ ${val.toLocaleString()}${val === 29500 ? " (2026 最低)" : ""}`;
+                select.appendChild(opt);
+            });
+            select.value = 29500;
+        }
+
+        function setStaffType(type) {
+            currentStaffType = type;
+            document.getElementById('btnMigrant').className = `flex-1 md:px-8 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${type === 'migrant' ? 'html3-tab-active' : 'text-slate-500'}`;
+            document.getElementById('btnLocal').className = `flex-1 md:px-8 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${type === 'local' ? 'html3-tab-active' : 'text-slate-500'}`;
+            updateInsuranceCosts();
+        }
+
+        function updateInsuranceCosts() {
+            const grade = parseFloat(document.getElementById('insuranceGrade').value);
+            const isMigrant = (currentStaffType === 'migrant');
+            if (grade === 0) {
+                ["feeLabor", "feeHealth", "feePension", "feeStability", "feeAccident"].forEach(id => document.getElementById(id).value = 0);
+            } else {
+                const laborRate = isMigrant ? 0.0805 : 0.0875;
+                document.getElementById('displayLaborRate').innerText = `~${(laborRate * 100).toFixed(2)}%`;
+                document.getElementById('feeLabor').value = Math.round(grade * laborRate);
+                document.getElementById('feeHealth').value = Math.round(grade * 0.0484);
+                document.getElementById('feeAccident').value = Math.round(grade * 0.0024);
+                if (isMigrant) {
+                    document.getElementById('feePension').value = 0;
+                    document.getElementById('feeStability').value = 5000;
+                    document.getElementById('stabilityContainer').className = "p-5 rounded-2xl bg-blue-50 border-2 border-blue-500 ring-4 ring-blue-500/5 shadow-inner";
+                    document.getElementById('pensionContainer').className = "p-5 rounded-2xl bg-slate-50 border border-slate-100 opacity-50";
+                } else {
+                    document.getElementById('feePension').value = Math.round(grade * 0.06);
+                    document.getElementById('feeStability').value = 0;
+                    document.getElementById('pensionContainer').className = "p-5 rounded-2xl bg-blue-50 border-2 border-blue-500 ring-4 ring-blue-500/5 shadow-inner";
+                    document.getElementById('stabilityContainer').className = "p-5 rounded-2xl bg-slate-50 border border-slate-100 opacity-50";
+                }
+            }
+            calculateAll();
+        }
+
+        function calculateAll() {
+            const actualSalary = parseFloat(document.getElementById('actualSalary').value) || 0;
+            const bonusAmount = parseFloat(document.getElementById('bonusAmount').value) || 0;
+            const totalMonthlyFees = ["feeLabor", "feeHealth", "feePension", "feeStability", "feeAccident"].reduce((acc, id) => acc + (parseFloat(document.getElementById(id).value) || 0), 0);
+            document.getElementById('displayTotalFees').innerText = '$' + totalMonthlyFees.toLocaleString();
+            const otDays = parseFloat(document.getElementById('otDays').value) || 0, otHours = parseFloat(document.getElementById('otHours').value) || 0;
+            const holidayDays = parseFloat(document.getElementById('holidayDays').value) || 0, holidayHours = parseFloat(document.getElementById('holidayHours').value) || 0;
+            const hourlyBase = actualSalary / 240;
+            document.getElementById('displayHourlyBaseText').innerText = `$ ${hourlyBase.toFixed(1)} / hr`;
+            let dailyOT = otHours <= 2 ? otHours * hourlyBase * 1.33 : (2 * hourlyBase * 1.33) + ((otHours - 2) * hourlyBase * 1.66);
+            let dailyHolidayPay = holidayHours <= 2 ? holidayHours * hourlyBase * 1.33 : (2 * hourlyBase * 1.33) + (Math.min(holidayHours - 2, 6) * hourlyBase * 1.66) + (holidayHours > 8 ? (holidayHours - 8) * hourlyBase * 2.66 : 0);
+            const totalOTPay = dailyOT * otDays + dailyHolidayPay * holidayDays;
+            const monthlyTotalCost = actualSalary + totalOTPay + totalMonthlyFees;
+            document.getElementById('displayTotalCost').innerText = Math.round(monthlyTotalCost).toLocaleString();
+            document.getElementById('displayTotalOT').innerText = '$' + Math.round(totalOTPay).toLocaleString();
+            const annualTotalCost = (monthlyTotalCost * 12) + bonusAmount;
+            document.getElementById('displayAnnualCost').innerText = Math.round(annualTotalCost).toLocaleString();
+            document.getElementById('displayYearEndAmount').innerText = '$' + Math.round(bonusAmount).toLocaleString();
+            const totalHoursYear = (176 + (otDays * otHours) + (holidayDays * holidayHours)) * 12;
+            const trueHourlyRate = totalHoursYear > 0 ? annualTotalCost / totalHoursYear : 0;
+            document.getElementById('displayHourlyRate').innerText = '$' + Math.round(trueHourlyRate);
+            document.getElementById('displayTotalHours').innerText = (totalHoursYear/12) + ' hr';
+            const status = document.getElementById('statusIndicator');
+            const alertBox = document.getElementById('alertBox');
+            alertBox.classList.remove('hidden');
+            const threshold = (currentStaffType === 'migrant') ? 220 : 215;
+            if (trueHourlyRate <= threshold) {
+                status.innerText = '成本控制：優異'; status.className = 'mt-10 py-4 rounded-2xl text-[10px] font-black uppercase text-center bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50 shadow-lg';
+            } else {
+                status.innerText = '成本控制：預警'; status.className = 'mt-10 py-4 rounded-2xl text-[10px] font-black uppercase text-center bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/50 shadow-lg';
+            }
+        }
+
+        window.onload = function() {
+            calcMold(); calcBag();
+            populateSelects(); setNow();
+            initInsuranceOptions(); updateInsuranceCosts();
+        };
+    </script>
+
+    <!-- 工具 4 邏輯 (Babel React from 報價單計算.html) -->
+    <script type="text/babel">
+        const { useState, useMemo, Fragment } = React;
+
+        const MACHINE_RATES_REF = [
+            { id: 'none', tonnage: '自定義', rate: 0 },
+            { id: '351', tonnage: '100T', rate: 3.00 },
+            { id: '012', tonnage: '210T', rate: 5.13 },
+            { id: '011', tonnage: '250T', rate: 6.00 },
+            { id: '401', tonnage: '400T', rate: 7.20 },
+            { id: '502a', tonnage: '450T', rate: 8.00 },
+            { id: '501', tonnage: '550T', rate: 8.60 },
+            { id: '601', tonnage: '600T', rate: 11.00 },
+            { id: '102', tonnage: '800T', rate: 13.00 },
+            { id: '121', tonnage: '1300T', rate: 18.00 },
+            { id: '151', tonnage: '1500T', rate: 20.00 },
+            { id: '221', tonnage: '2200T', rate: 33.00 },
+            { id: '312', tonnage: '2700T', rate: 43.66 },
+            { id: '321', tonnage: '3200T', rate: 51.04 },
+        ];
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const icons = {
+                Calculator: <path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm0 4v4h4V6H6zm6 0v4h4V6h-4zm-6 6v4h4v-4H6zm6 0v4h4v-4h-4zm-6 6v2h10v-2H6z"/>,
+                Plus: <path d="M12 5v14M5 12h14"/>,
+                Trash2: <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>,
+                TrendingUp: <path d="m22 7-8.5 8.5-5-5L2 17M16 7h6v6"/>,
+                Layers: <path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>,
+                Users: (
+                    <Fragment>
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    </Fragment>
+                ),
+                Cpu: <path d="M4 4h16v16H4zM9 9h6v6H9zM15 2v2M9 2v2M20 15h2M20 9h2M15 20v2M9 20v2M2 15h2M2 9h2"/>,
+                Table: <path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18"/>,
+                Info: (
+                    <Fragment>
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4" />
+                        <path d="M12 8h.01" />
+                    </Fragment>
+                ),
+                CheckCircle: <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3" />,
+                Zap: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
+                ArrowRight: <path d="M5 12h14M12 5l7 7-7 7" />
+            };
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || null}
+                </svg>
+            );
+        };
+
+        const generateId = () => Math.random().toString(36).substring(2, 9);
+
+        const App = () => {
+            const [monthlyQty, setMonthlyQty] = useState(3520);
+            const [materialConfigs, setMaterialConfigs] = useState([{ id: 'm1', label: '主要材料', weight: 123, improvedWeight: 115, unitPrice: 85 }]);
+            const [components, setComponents] = useState([{ id: 'b1', name: '隔音棉組件', price: 15, improvedPrice: 14 }]);
+            const [machineConfigs, setMachineConfigs] = useState([{ id: 'c1', tonnage: '600', label: '成型一線', rate: 11.00, cavities: 1, cycleTime: 65, improvedCycleTime: 60 }]);
+            const [assyConfigs, setAssyConfigs] = useState([{ id: 'a1', label: '後段組裝', peopleCount: 1, secPerPerson: 60, improvedSecPerPerson: 50, ratePerSec: 0.05 }]);
+
+            const [selectedMatId, setSelectedMatId] = useState('m1');
+            const [selectedMchId, setSelectedMchId] = useState('c1');
+            const [selectedAsyId, setSelectedAsyId] = useState('a1');
+
+            const calculateDetails = (mat, mch, asy, comps, isImproved = false) => {
+                if (!mat || !mch || !asy) return null;
+                const weight = isImproved ? parseFloat(mat.improvedWeight) : parseFloat(mat.weight);
+                const rawCompSum = comps.reduce((sum, c) => sum + (parseFloat(isImproved ? c.improvedPrice : c.price) || 0), 0);
+                const cycleTime = isImproved ? parseFloat(mch.improvedCycleTime) : parseFloat(mch.cycleTime);
+                const assySec = isImproved ? parseFloat(asy.improvedSecPerPerson) : parseFloat(asy.secPerPerson);
+                const cavityFactor = parseFloat(mch.cavities) || 1;
+                const matBase = (weight / 1000) * parseFloat(mat.unitPrice);
+                const matAfterLoss = matBase * 1.03;
+                const totalA = matAfterLoss * 1.05;
+                const totalB = rawCompSum * 1.03;
+                const injBase = (parseFloat(mch.rate) / cavityFactor) * (cycleTime / 60);
+                const assyBase = (parseFloat(asy.peopleCount) * assySec) * parseFloat(asy.ratePerSec);
+                const processAfterLoss = (injBase + assyBase) * 1.03;
+                const totalC = processAfterLoss * 1.07;
+                return { A: totalA, B: totalB, C: totalC, total: totalA + totalB + totalC };
+            };
+
+            const comparison = useMemo(() => {
+                const mat = materialConfigs.find(m => m.id === selectedMatId) || materialConfigs[0];
+                const mch = machineConfigs.find(m => m.id === selectedMchId) || machineConfigs[0];
+                const asy = assyConfigs.find(a => a.id === selectedAsyId) || assyConfigs[0];
+                const current = calculateDetails(mat, mch, asy, components, false);
+                const improved = calculateDetails(mat, mch, asy, components, true);
+                if (!current || !improved) return null;
+                return {
+                    current, improved,
+                    savingPerUnit: current.total - improved.total,
+                    monthlySaving: (current.total - improved.total) * monthlyQty,
+                    configNames: { mat: mat?.label, mch: `${mch?.tonnage}T ${mch?.label}`, asy: asy?.label }
+                };
+            }, [materialConfigs, components, machineConfigs, assyConfigs, selectedMatId, selectedMchId, selectedAsyId, monthlyQty]);
+
+            const updateField = (setter, id, field, value) => {
+                setter(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+            };
+
+            const handleMachineSelect = (id, tonnage, rate) => {
+                setMachineConfigs(prev => prev.map(m => m.id === id ? { ...m, tonnage, rate } : m));
+            };
+
+            const ComparisonInput = ({ originalValue, improvedValue, unit, onChangeOriginal, onChangeImproved }) => {
+                const diff = originalValue && improvedValue ? ((improvedValue - originalValue) / originalValue * 100).toFixed(1) : 0;
+                return (
+                    <div className="grid grid-cols-2 gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 shadow-sm">
+                            <label className="text-[9px] font-bold text-slate-400 block mb-1 uppercase tracking-tighter">原本 ({unit})</label>
+                            <input type="number" className="w-full font-mono text-slate-500 bg-transparent text-sm font-semibold outline-none quote-input" value={originalValue} onChange={(e) => onChangeOriginal(e.target.value)} />
+                        </div>
+                        <div className={`p-2 rounded-xl border shadow-sm ${diff < 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+                            <label className={`text-[9px] font-bold block mb-1 uppercase tracking-tighter ${diff < 0 ? 'text-emerald-600' : 'text-slate-400'}`}>改善 ({unit})</label>
+                            <div className="flex items-center gap-1">
+                                <input type="number" className={`w-full font-mono bg-transparent text-sm font-bold outline-none quote-input ${diff < 0 ? 'text-emerald-700' : 'text-slate-700'}`} value={improvedValue} onChange={(e) => onChangeImproved(e.target.value)} />
+                                {diff < 0 && <span className="text-[8px] font-black text-emerald-500">{diff}%</span>}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-[#f8fafc] p-4 lg:p-10 font-sans text-slate-900 pb-20">
+                    <div className="max-w-7xl mx-auto">
+                        <header className="mb-10 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-slate-200 pb-8 text-center md:text-left">
+                            <div>
+                                <div className="inline-flex items-center gap-2 mb-3 text-blue-600 font-extrabold uppercase tracking-[0.2em] text-[10px] bg-blue-50 px-3 py-1 rounded-full">
+                                    <Icon name="Calculator" size={16} /> <span>Jian-Shang Cost Optimization System</span>
+                                </div>
+                                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">瑞全企業<span className="text-blue-600">。</span>報價改善分析</h1>
+                            </div>
+                            <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-6 min-w-[300px]">
+                                <div>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1 text-gray-400 text-right">每月預估量</label>
+                                    <div className="flex items-center gap-2">
+                                        <input type="number" className="w-24 text-4xl font-mono font-black text-blue-600 outline-none bg-transparent quote-input" value={monthlyQty} onChange={(e) => setMonthlyQty(parseFloat(e.target.value) || 0)} />
+                                        <span className="text-slate-300 font-black text-sm">PCS</span>
+                                    </div>
+                                </div>
+                                <div className="h-10 w-[1px] bg-slate-100"></div>
+                                <Icon name="TrendingUp" className="text-blue-200" size={40} />
+                            </div>
+                        </header>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16 items-start text-left">
+                            <section>
+                                <div className="flex justify-between items-center mb-5 px-2">
+                                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div> A. 重量優化 (Materials)
+                                    </h2>
+                                    <button onClick={() => setMaterialConfigs([...materialConfigs, { id: generateId(), label: `新材料`, weight: 0, improvedWeight: 0, unitPrice: 0 }])} className="text-[10px] bg-white border border-slate-200 text-slate-600 hover:text-blue-600 px-4 py-1.5 rounded-full font-bold shadow-sm transition-all">+ Add New</button>
+                                </div>
+                                <div className="space-y-4">
+                                    {materialConfigs.map((m) => (
+                                        <div key={m.id} onClick={() => setSelectedMatId(m.id)} className={`group p-5 rounded-[2rem] border-2 transition-all cursor-pointer relative ${selectedMatId === m.id ? 'border-emerald-500 bg-white shadow-2xl shadow-emerald-100 scale-[1.02]' : 'bg-white/50 border-slate-100 hover:border-slate-300'}`}>
+                                            <div className="flex justify-between items-start mb-4 pr-10">
+                                                <input type="text" className="bg-transparent font-extrabold text-sm outline-none text-slate-800 border-b-2 border-transparent focus:border-emerald-300 w-full" onClick={(e)=>e.stopPropagation()} value={m.label} onChange={(e) => updateField(setMaterialConfigs, m.id, 'label', e.target.value)} />
+                                                <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-lg ml-2 shrink-0" onClick={(e)=>e.stopPropagation()}>
+                                                    <span className="text-[9px] font-bold text-slate-400">NT$</span>
+                                                    <input type="number" className="w-10 bg-transparent text-center font-mono font-bold text-xs quote-input" value={m.unitPrice} onChange={(e) => updateField(setMaterialConfigs, m.id, 'unitPrice', e.target.value)} />
+                                                    <span className="text-[9px] font-bold text-slate-400">/kg</span>
+                                                </div>
+                                            </div>
+                                            <ComparisonInput originalValue={m.weight} improvedValue={m.improvedWeight} unit="g" onChangeOriginal={(v)=>updateField(setMaterialConfigs, m.id, 'weight', v)} onChangeImproved={(v)=>updateField(setMaterialConfigs, m.id, 'improvedWeight', v)} />
+                                            <button onClick={(e) => { e.stopPropagation(); setMaterialConfigs(prev => prev.filter(x => x.id !== m.id)); }} className="absolute top-4 right-4 bg-white text-slate-300 hover:text-red-500 p-2 rounded-full border border-slate-100 shadow-sm transition-all"><Icon name="Trash2" size={14}/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section>
+                                <div className="flex justify-between items-center mb-5 px-2">
+                                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div> B. 供應商議價 (BOM)
+                                    </h2>
+                                    <button onClick={() => setComponents([...components, { id: generateId(), name: '子品番', price: 0, improvedPrice: 0 }])} className="text-[10px] bg-white border border-slate-200 text-slate-600 px-4 py-1.5 rounded-full font-bold shadow-sm">+ Add</button>
+                                </div>
+                                <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/30">
+                                    <div className="space-y-4 mb-4">
+                                        {components.map((c) => (
+                                            <div key={c.id} className="group p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100 relative pr-12">
+                                                <input type="text" className="bg-transparent font-bold text-xs mb-2 block outline-none text-slate-600 w-full" value={c.name} onChange={(e) => updateField(setComponents, c.id, 'name', e.target.value)} />
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    <input type="number" className="w-1/2 p-1.5 bg-white border border-slate-100 rounded-lg font-mono text-xs text-slate-400 min-w-0 quote-input" value={c.price} onChange={(e) => updateField(setComponents, c.id, 'price', e.target.value)} title="原單價" />
+                                                    <Icon name="ArrowRight" size={12} className="text-slate-300 shrink-0" />
+                                                    <input type="number" className="w-1/2 p-1.5 bg-emerald-50 border border-emerald-100 rounded-lg font-mono text-xs font-bold text-emerald-700 min-w-0 quote-input" value={c.improvedPrice} onChange={(e) => updateField(setComponents, c.id, 'improvedPrice', e.target.value)} title="改善單價" />
+                                                </div>
+                                                <button onClick={() => setComponents(prev => prev.filter(x => x.id !== c.id))} className="absolute top-1/2 -translate-y-1/2 right-3 text-slate-300 hover:text-red-500 transition-all p-1" title="刪除部品"><Icon name="Trash2" size={16}/></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">總計 (BOM Total)</span>
+                                        <div className="text-right">
+                                            <div className="text-[9px] text-slate-400 font-mono">Original: {components.reduce((s,c)=>s+(parseFloat(c.price)||0),0).toFixed(1)}</div>
+                                            <div className="text-sm font-black text-emerald-600">Improved: {components.reduce((s,c)=>s+(parseFloat(c.improvedPrice)||0),0).toFixed(1)}元</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="overflow-hidden">
+                                <div className="flex justify-between items-center mb-5 px-2">
+                                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-orange-500 rounded-full"></div> C. 秒數與費率優化 (Process)
+                                    </h2>
+                                    <button onClick={() => setMachineConfigs([...machineConfigs, { id: generateId(), tonnage: '自定義', label: `機台`, rate: 0, cavities: 1, cycleTime: 0, improvedCycleTime: 0 }])} className="text-[10px] bg-white border border-slate-200 text-slate-600 px-4 py-1.5 rounded-full font-bold shadow-sm">+ Machine</button>
+                                </div>
+                                <div className="space-y-6">
+                                    {machineConfigs.map((m) => (
+                                        <div key={m.id} onClick={()=>setSelectedMchId(m.id)} className={`group p-5 rounded-[2rem] border-2 transition-all cursor-pointer relative overflow-hidden ${selectedMchId === m.id ? 'border-orange-500 bg-white shadow-2xl shadow-orange-100 scale-[1.02]' : 'bg-white/50 border-slate-100 hover:border-slate-300'}`}>
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4 pr-10" onClick={(e)=>e.stopPropagation()}>
+                                                <select className="font-black text-orange-600 bg-orange-50 border-none rounded-lg px-2 py-1 outline-none text-[10px] h-7 shrink-0" value={m.tonnage} onChange={(e) => { const ref = MACHINE_RATES_REF.find(r => r.tonnage === e.target.value); handleMachineSelect(m.id, ref.tonnage, ref.rate); }}>
+                                                    {MACHINE_RATES_REF.map(ref => <option key={ref.id} value={ref.tonnage}>{ref.tonnage}</option>)}
+                                                </select>
+                                                <input type="text" className="bg-transparent font-extrabold text-sm outline-none text-slate-700 w-auto flex-1 min-w-[60px]" value={m.label} onChange={(e) => updateField(setMachineConfigs, m.id, 'label', e.target.value)}/>
+                                                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                                    <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+                                                        <span className="text-[8px] font-bold text-slate-400">NT$</span>
+                                                        <input type="number" className="w-8 bg-transparent text-center font-mono font-bold text-[10px] text-orange-600 outline-none quote-input" value={m.rate} onChange={(e) => updateField(setMachineConfigs, m.id, 'rate', e.target.value)} />
+                                                        <span className="text-[8px] font-bold text-slate-400">/分</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+                                                        <span className="text-[8px] font-black text-blue-400 uppercase">Cav</span>
+                                                        <input type="number" className="w-6 bg-transparent text-center font-bold text-blue-600 text-[10px] outline-none quote-input" value={m.cavities} onChange={(e)=>updateField(setMachineConfigs, m.id, 'cavities', e.target.value)} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <ComparisonInput originalValue={m.cycleTime} improvedValue={m.improvedCycleTime} unit="S" onChangeOriginal={(v)=>updateField(setMachineConfigs, m.id, 'cycleTime', v)} onChangeImproved={(v)=>updateField(setMachineConfigs, m.id, 'improvedCycleTime', v)} />
+                                            <button onClick={(e) => { e.stopPropagation(); setMachineConfigs(prev => prev.filter(x => x.id !== m.id)); }} className="absolute top-4 right-4 bg-white text-slate-300 hover:text-red-500 p-2 rounded-full border border-slate-100 shadow-sm transition-all"><Icon name="Trash2" size={14}/></button>
+                                        </div>
+                                    ))}
+
+                                    <div className="border-t border-slate-200 pt-6">
+                                        <div className="flex justify-between items-center mb-4 px-2">
+                                            <h3 className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-2"><Icon name="Users" size={14}/> 組裝工時改善</h3>
+                                            <button onClick={() => setAssyConfigs([...assyConfigs, { id: generateId(), label: `組裝線`, peopleCount: 1, secPerPerson: 0, improvedSecPerPerson: 0, ratePerSec: 0.05 }])} className="text-[9px] text-slate-400 hover:text-purple-600">+ 新增</button>
+                                        </div>
+                                        {assyConfigs.map((a) => (
+                                            <div key={a.id} onClick={()=>setSelectedAsyId(a.id)} className={`group p-5 rounded-[2rem] border-2 transition-all cursor-pointer relative mb-4 overflow-hidden ${selectedAsyId === a.id ? 'border-purple-500 bg-white shadow-2xl shadow-purple-100 scale-[1.02]' : 'bg-white/50 border-slate-100 hover:border-slate-300'}`}>
+                                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pr-10" onClick={(e)=>e.stopPropagation()}>
+                                                    <input type="text" className="bg-transparent font-extrabold text-sm outline-none text-slate-700 flex-1 min-w-[80px]" value={a.label} onChange={(e) => updateField(setAssyConfigs, a.id, 'label', e.target.value)}/>
+                                                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                                        <div className="flex items-center gap-1 bg-purple-50 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+                                                            <span className="text-[8px] font-black text-purple-400">P:</span>
+                                                            <input type="number" className="w-5 bg-transparent text-center font-bold text-purple-700 text-[10px] outline-none quote-input" value={a.peopleCount} onChange={(e)=>updateField(setAssyConfigs, a.id, 'peopleCount', e.target.value)}/>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+                                                            <span className="text-[8px] font-bold text-slate-400">NT$</span>
+                                                            <input type="number" step="0.01" className="w-9 bg-transparent text-center font-mono font-bold text-[10px] text-blue-600 outline-none quote-input" value={a.ratePerSec} onChange={(e) => updateField(setAssyConfigs, a.id, 'ratePerSec', e.target.value)} title="秒費率" />
+                                                            <span className="text-[8px] font-bold text-slate-400">/秒</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <ComparisonInput originalValue={a.secPerPerson} improvedValue={a.improvedSecPerPerson} unit="S" onChangeOriginal={(v)=>updateField(setAssyConfigs, a.id, 'secPerPerson', v)} onChangeImproved={(v)=>updateField(setAssyConfigs, a.id, 'improvedSecPerPerson', v)} />
+                                                <button onClick={(e) => { e.stopPropagation(); setAssyConfigs(prev => prev.filter(x => x.id !== a.id)); }} className="absolute top-4 right-4 bg-white text-slate-300 hover:text-red-500 p-2 rounded-full border border-slate-100 shadow-sm transition-all"><Icon name="Trash2" size={14}/></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        {comparison && (
+                            <div className="bg-slate-900 rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(15,23,42,0.5)] overflow-hidden border border-slate-800">
+                                <div className="p-10 bg-gradient-to-br from-slate-800 to-slate-900 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+                                    <div className="flex flex-col md:flex-row items-center gap-6">
+                                        <div className="bg-blue-500/10 p-5 rounded-[2rem] border border-blue-500/20">
+                                            <Icon name="Zap" size={40} className="text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">改善報價核算分析</h2>
+                                            <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                                                <div className="text-[9px] font-black text-slate-400 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 uppercase">MAT: {comparison.configNames.mat}</div>
+                                                <div className="text-[9px] font-black text-slate-400 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 uppercase">MCH: {comparison.configNames.mch}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-center md:text-right">
+                                        <div className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-1">Monthly Saving Potential</div>
+                                        <div className="text-5xl md:text-6xl font-mono font-black text-green-400 tracking-tighter drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
+                                            NT$ {comparison.monthlySaving.toLocaleString(undefined, {maximumFractionDigits:0})}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-right border-collapse min-w-[900px]">
+                                        <thead>
+                                            <tr className="bg-slate-900/50 text-[10px] text-slate-500 font-black uppercase border-b border-slate-800 tracking-widest">
+                                                <th className="p-8 text-left">成本結構明細 (Jian-Shang Formula)</th>
+                                                <th className="p-8">基準報價 (Original)</th>
+                                                <th className="p-8 text-green-400 bg-green-500/5 italic underline decoration-green-500/30 underline-offset-8 font-bold tracking-tight">實際改善成果 (Improved)</th>
+                                                <th className="p-8 text-blue-400">單件節省效益 (Saving)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm divide-y divide-slate-800 font-mono">
+                                            <tr className="hover:bg-slate-800/20 transition-colors">
+                                                <td className="p-8 text-left">
+                                                    <div className="font-extrabold text-slate-400">A. 材料費 (損耗3% / 利潤5%)</div>
+                                                    <div className="text-[10px] text-slate-600 mt-1 italic">[(W/1000*P) * 1.03 * 1.05]</div>
+                                                </td>
+                                                <td className="p-8 text-slate-500 font-bold">NT$ {comparison.current.A.toFixed(2)}</td>
+                                                <td className="p-8 text-green-300 font-black bg-green-500/5 italic">NT$ {comparison.improved.A.toFixed(2)}</td>
+                                                <td className="p-8 text-blue-400 font-bold">{(comparison.current.A - comparison.improved.A).toFixed(2)}</td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-800/20 transition-colors">
+                                                <td className="p-8 text-left">
+                                                    <div className="font-extrabold text-slate-400">B. 子部品 (損耗3%)</div>
+                                                    <div className="text-[10px] text-slate-600 mt-1 italic">[BOM * 1.03] (建上利潤不計)</div>
+                                                </td>
+                                                <td className="p-8 text-slate-500 font-bold">NT$ {comparison.current.B.toFixed(2)}</td>
+                                                <td className="p-8 text-green-300 font-black bg-green-500/5 italic">NT$ {comparison.improved.B.toFixed(2)}</td>
+                                                <td className="p-8 text-blue-400 font-bold">{(comparison.current.B - comparison.improved.B).toFixed(2)}</td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-800/20 transition-colors">
+                                                <td className="p-8 text-left">
+                                                    <div className="font-extrabold text-slate-400">C. 加工組裝 (損耗3% / 利潤7%)</div>
+                                                    <div className="text-[10px] text-slate-600 mt-1 italic">[(射+組) * 1.03 * 1.07]</div>
+                                                </td>
+                                                <td className="p-8 text-slate-500 font-bold">NT$ {comparison.current.C.toFixed(2)}</td>
+                                                <td className="p-8 text-green-300 font-black bg-green-500/5 italic">NT$ {comparison.improved.C.toFixed(2)}</td>
+                                                <td className="p-8 text-blue-400 font-bold">{(comparison.current.C - comparison.improved.C).toFixed(2)}</td>
+                                            </tr>
+                                            <tr className="bg-blue-500/5">
+                                                <td className="p-10 text-left border-t-2 border-slate-700">
+                                                    <div className="font-black text-white text-2xl tracking-tighter uppercase leading-none text-left">最終單價報價比較</div>
+                                                    <div className="text-[10px] text-blue-400 mt-2 font-black tracking-widest uppercase text-left">Unit Price Comparison</div>
+                                                </td>
+                                                <td className="p-10 text-slate-400 font-black text-xl border-t-2 border-slate-700 leading-none">NT$ {comparison.current.total.toFixed(2)}</td>
+                                                <td className="p-10 text-green-400 font-black text-4xl md:text-5xl italic bg-green-400/10 border-t-2 border-slate-700 leading-none">NT$ {comparison.improved.total.toFixed(2)}</td>
+                                                <td className="p-10 text-blue-400 font-black text-3xl md:text-4xl underline decoration-4 border-t-2 border-slate-700 leading-none">-{comparison.savingPerUnit.toFixed(2)}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-12 p-8 bg-white rounded-[2.5rem] border border-slate-100 text-[11px] text-slate-400 grid grid-cols-1 md:grid-cols-2 gap-12 shadow-sm text-left">
+                             <div>
+                                <h4 className="font-black text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-widest text-left"><Icon name="Info" size={16} className="text-blue-500"/> 核算逻辑摘要 (Standard Formula)</h4>
+                                <ul className="space-y-2 list-none leading-relaxed text-left">
+                                    <li className="flex gap-2 text-left"><strong>A. 材料：</strong> <span>[(重量/1000 × 單價) × 1.03] × 1.05</span></li>
+                                    <li className="flex gap-2 text-left"><strong>B. 部品：</strong> <span>(BOM單價總和) × 1.03 (不計利潤)</span></li>
+                                    <li className="flex gap-2 text-left"><strong>C. 加工：</strong> <span>[(射出單價 + 組裝單價) × 1.03] × 1.07</span></li>
+                                    <li className="text-slate-300 italic pt-2 font-medium text-left">* 射出單價 = (機台分鐘費/模具穴數) × (成型秒數/60)</li>
+                                </ul>
+                             </div>
+                             <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100 flex items-center italic text-slate-500 leading-loose text-left">
+                                 <p className="text-[10px] text-left">
+                                     透過減輕克重 (g)、優化成型秒數 (S) 或降低 BOM 採購價，可直接提升專案毛利。<br/>
+                                     此模擬器旨在量化「持續改善項目」對最終報價與每月盈餘的直接貢獻價值。
+                                 </p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('react-quote-analysis-root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
